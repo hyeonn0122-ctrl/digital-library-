@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>교내 연구 디지털 도서관</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+  <style>
+    :root {
+      --bg: #FBFBFA; --side: #F7F7F5; --text: #37352F;
+      --border: #E9E9E6; --accent: #37352F; --muted: #9B9A97;
+      --card: #ffffff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Pretendard", -apple-system, sans-serif; }
+    body { display: flex; height: 100vh; background: var(--bg); color: var(--text); overflow: hidden; }
+    ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }
+
+    /* SIDEBAR */
+    #sidebar { width: 240px; background: var(--side); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; padding: 20px 12px; transition: all 0.22s; flex-shrink: 0; }
+    #sidebar.closed { width: 0; padding: 0; overflow: hidden; }
+    .logo { font-weight: 800; font-size: 15px; display: flex; align-items: center; gap: 8px;
+      margin-bottom: 20px; padding: 4px 8px; }
+    .side-section { font-size: 11px; font-weight: 700; color: #B7B5B0; letter-spacing: 0.1em;
+      padding: 0 10px; margin-bottom: 6px; }
+    .menu-item { padding: 6px 10px; border-radius: 5px; cursor: pointer; font-size: 14px;
+      display: flex; align-items: center; gap: 8px; transition: background 0.15s;
+      color: #73726C; margin-bottom: 2px; }
+    .menu-item:hover { background: rgba(55,53,47,0.06); }
+    .menu-item.active { background: rgba(55,53,47,0.08); color: var(--text); font-weight: 600; }
+    .menu-badge { font-size: 12px; color: #B7B5B0; background: #EEEEED;
+      padding: 1px 7px; border-radius: 10px; margin-left: auto; }
+    .side-footer { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border);
+      font-size: 12px; color: #C4C3BE; line-height: 1.6; }
+
+    /* TOPBAR */
+    #topbar { border-bottom: 1px solid var(--border); padding: 0 28px; height: 52px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--bg); flex-shrink: 0; }
+    .topbar-left { display: flex; align-items: center; gap: 10px; }
+    .topbar-right { display: flex; align-items: center; gap: 8px; }
+    #menuToggle { background: none; border: none; cursor: pointer; font-size: 18px; color: #9B9A97; padding: 4px; }
+
+    /* MAIN */
+    #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    #scroll { flex: 1; overflow-y: auto; padding: 36px 44px; }
+
+    /* BUTTONS */
+    .btn-primary { background: #37352F; color: white; border: none; padding: 9px 20px;
+      border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer; transition: opacity 0.15s; }
+    .btn-primary:hover { opacity: 0.85; }
+    .btn-ghost { background: transparent; color: #73726C; border: 1px solid #E0E0E0;
+      padding: 8px 18px; border-radius: 6px; font-weight: 500; font-size: 14px;
+      cursor: pointer; transition: all 0.15s; }
+    .btn-ghost:hover { border-color: #aaa; color: var(--text); }
+    .btn-back { background: transparent; color: #73726C; border: 1px solid #E0E0E0;
+      padding: 7px 16px; border-radius: 6px; font-size: 14px; cursor: pointer; transition: all 0.15s; }
+    .btn-back:hover { border-color: #aaa; color: var(--text); }
+
+    /* GRADE SWITCH */
+    .grade-switch { display: flex; gap: 4px; padding: 4px; background: #F0EFED;
+      border-radius: 8px; width: fit-content; margin-bottom: 20px; }
+    .grade-btn { padding: 6px 16px; border-radius: 5px; border: none; font-size: 14px;
+      font-weight: 600; cursor: pointer; transition: all 0.15s; background: transparent; color: #73726C; }
+    .grade-btn.active { background: #37352F; color: white; }
+
+    /* SEARCH */
+    .search-inp { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px;
+      font-size: 13px; font-family: inherit; outline: none; background: #FAFAF9; width: 190px;
+      transition: border-color 0.15s; }
+    .search-inp:focus { border-color: #37352F; background: white; }
+
+    /* CARDS */
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 16px; }
+    .card { background: white; border: 1px solid var(--border); border-radius: 8px;
+      padding: 18px 20px; cursor: pointer; transition: box-shadow 0.18s, border-color 0.18s;
+      display: flex; flex-direction: column; gap: 10px; }
+    .card:hover { box-shadow: 0 2px 12px rgba(55,53,47,0.1); border-color: #C8C7C2; }
+    .card-thumb { width: 100%; height: 156px; object-fit: cover; border-radius: 6px; display: block; }
+    .card-title { font-weight: 700; font-size: 15px; line-height: 1.4; }
+    .card-abstract { font-size: 13px; color: #73726C; line-height: 1.6;
+      overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .card-footer { border-top: 1px solid #F0EFED; padding-top: 10px;
+      display: flex; justify-content: space-between; align-items: center; }
+    .card-author { font-size: 13px; font-weight: 600; }
+    .card-date { font-size: 12px; color: #B7B5B0; }
+
+    /* FORM */
+    .form-wrap { max-width: 660px; }
+    .form-title { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 4px; }
+    .form-sub { font-size: 13px; color: #9B9A97; margin-bottom: 28px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+    .field { margin-bottom: 14px; }
+    .field label { font-size: 12px; font-weight: 600; color: #6B6A65; display: block;
+      margin-bottom: 5px; letter-spacing: 0.02em; }
+    .field input, .field select, .field textarea {
+      width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 6px;
+      font-size: 14px; font-family: inherit; outline: none; background: #FAFAF9;
+      color: var(--text); transition: border-color 0.15s; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: #37352F; background: white; }
+    .field textarea { resize: vertical; min-height: 100px; line-height: 1.7; }
+    .form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+
+    /* UPLOAD */
+    .upload-zone { display: block; border: 1.5px dashed #DDDDD8; border-radius: 8px;
+      padding: 20px; text-align: center; cursor: pointer; background: #FAFAF9;
+      transition: border-color 0.15s; }
+    .upload-zone:hover { border-color: #37352F; }
+    .upload-zone-icon { font-size: 22px; margin-bottom: 4px; }
+    .upload-zone-text { font-size: 13px; color: #9B9A97; }
+    .preview-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .preview-item { position: relative; border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+    .preview-item img { width: 80px; height: 80px; object-fit: cover; display: block; }
+    .preview-del { position: absolute; top: 3px; right: 3px; background: rgba(0,0,0,0.45);
+      color: white; border: none; border-radius: 50%; width: 18px; height: 18px;
+      font-size: 11px; cursor: pointer; line-height: 18px; padding: 0; font-weight: 800; }
+    .file-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .file-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px;
+      background: white; border: 1px solid var(--border); border-radius: 6px;
+      font-size: 13px; color: #73726C; }
+    .file-chip-del { cursor: pointer; color: #C8C7C2; }
+
+    /* DETAIL */
+    .detail-wrap { max-width: 700px; }
+    .detail-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .tag { font-size: 12px; background: #F3F3F1; color: #9B9A97; padding: 2px 8px;
+      border-radius: 4px; font-weight: 500; }
+    .detail-title { font-size: 24px; font-weight: 800; letter-spacing: -0.02em;
+      line-height: 1.35; margin-bottom: 12px; }
+    .detail-meta { display: flex; gap: 16px; font-size: 13px; color: #9B9A97;
+      margin-bottom: 26px; flex-wrap: wrap; }
+    .sec-box { background: #F9F9F8; border: 1px solid #EDEDEB; border-radius: 8px;
+      padding: 16px 18px; margin-bottom: 14px; }
+    .sec-title { font-size: 11px; font-weight: 700; color: #9B9A97; letter-spacing: 0.08em;
+      text-transform: uppercase; margin-bottom: 10px; }
+    .sec-body { font-size: 14px; line-height: 1.8; color: var(--text); white-space: pre-wrap; }
+    .img-gallery { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+    .detail-file { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px;
+      background: white; border: 1px solid var(--border); border-radius: 6px;
+      font-size: 13px; cursor: pointer; color: var(--text); text-decoration: none; }
+    .btn-delete { background: none; border: 1px solid #F0EFED; color: #C8C7C2;
+      font-size: 13px; cursor: pointer; padding: 7px 14px; border-radius: 6px; transition: all 0.15s; }
+    .btn-delete:hover { border-color: #FFBCBC; color: #E03E3E; }
+
+    /* EMPTY */
+    .empty { text-align: center; padding: 70px 20px; }
+    .empty-icon { font-size: 44px; margin-bottom: 14px; }
+    .empty-title { font-size: 15px; font-weight: 600; color: #6B7280; margin-bottom: 6px; }
+    .empty-sub { font-size: 13px; color: #9CA3AF; }
+
+    /* LOADING OVERLAY */
+    #loading-overlay { position: fixed; inset: 0; background: rgba(251,251,250,0.85);
+      display: flex; align-items: center; justify-content: center; z-index: 999;
+      font-size: 14px; color: #9B9A97; gap: 10px; }
+    .spinner { width: 18px; height: 18px; border: 2px solid #E0E0E0;
+      border-top-color: #37352F; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* PROGRESS BAR */
+    #progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: #37352F;
+      width: 0%; transition: width 0.3s; z-index: 1000; border-radius: 0 2px 2px 0; }
+
+    /* TOAST */
+    #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(10px);
+      padding: 11px 22px; border-radius: 8px; font-size: 13px; font-weight: 600;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.18); z-index: 9999; opacity: 0;
+      transition: all 0.25s; pointer-events: none; }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* STATS */
+    .stat-line { font-size: 13px; color: #B7B5B0; margin-bottom: 14px; }
+
+    @media (max-width: 600px) {
+      #scroll { padding: 20px 16px; }
+      .form-row { grid-template-columns: 1fr; }
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+<div id="loading-overlay"><div class="spinner"></div> 불러오는 중...</div>
+<div id="toast"></div>
+
+<!-- SIDEBAR -->
+<aside id="sidebar">
+  <div class="logo">📚 디지털 도서관</div>
+  <div class="side-section">아카이브</div>
+  <div class="menu-item" id="menu-all" onclick="switchGrade(null)">
+    🏠 전체 보관소 <span class="menu-badge" id="badge-all">0</span>
+  </div>
+  <div class="menu-item active" id="menu-2" onclick="switchGrade(2)">
+    📘 2학년 아카이브 <span class="menu-badge" id="badge-2">0</span>
+  </div>
+  <div class="menu-item" id="menu-3" onclick="switchGrade(3)">
+    📗 3학년 아카이브 <span class="menu-badge" id="badge-3">0</span>
+  </div>
+  <div class="side-footer">선후배 간 지식 공유를<br>위한 연구 아카이브</div>
+</aside>
+
+<!-- MAIN -->
+<div id="main">
+  <!-- TOPBAR -->
+  <div id="topbar">
+    <div class="topbar-left">
+      <button id="menuToggle" onclick="toggleSidebar()">☰</button>
+      <button class="btn-back" id="btn-back" style="display:none" onclick="showList()">← 목록으로</button>
+    </div>
+    <div class="topbar-right">
+      <input class="search-inp" id="searchInp" placeholder="🔍  검색" oninput="renderList()" style="display:none">
+      <button class="btn-primary" id="btn-write" onclick="showWrite()">+ 자료 등록</button>
+    </div>
+  </div>
+
+  <!-- SCROLL AREA -->
+  <div id="scroll">
+
+    <!-- LIST VIEW -->
+    <div id="view-list">
+      <div style="margin-bottom:26px">
+        <h1 style="font-size:26px;font-weight:800;letter-spacing:-0.02em;margin-bottom:6px">교내 연구 데이터 아카이브</h1>
+        <p style="font-size:14px;color:#73726C;line-height:1.7">실험 보고서와 프로젝트 자료를 체계적으로 보관합니다.<br>선배들의 연구 경험이 후배들에게 자산이 됩니다.</p>
+      </div>
+      <div class="grade-switch">
+        <button class="grade-btn active" id="gtab-2" onclick="switchGrade(2)">2학년 자료 <span id="gtab-count-2">(0)</span></button>
+        <button class="grade-btn" id="gtab-3" onclick="switchGrade(3)">3학년 자료 <span id="gtab-count-3">(0)</span></button>
+      </div>
+      <div class="stat-line" id="stat-line">0개의 자료</div>
+      <div class="grid" id="card-grid"></div>
+    </div>
+
+    <!-- WRITE VIEW -->
+    <div id="view-write" style="display:none">
+      <div class="form-wrap">
+        <div class="form-title">📥 새 자료 등록</div>
+        <div class="form-sub">연구 경험을 후배들과 나눠주세요</div>
+        <div class="form-row">
+          <div class="field">
+            <label>학년</label>
+            <select id="f-grade">
+              <option value="2">2학년</option>
+              <option value="3">3학년</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>작성자 *</label>
+            <input id="f-author" placeholder="이름 또는 동아리명">
+          </div>
+        </div>
+        <div class="field">
+          <label>연구 제목 *</label>
+          <input id="f-title" placeholder="연구 주제명">
+        </div>
+        <div class="field">
+          <label>연구 요약 *</label>
+          <textarea id="f-abstract" placeholder="어떤 연구인지 간략히 설명해주세요"></textarea>
+        </div>
+        <div class="field">
+          <label>실험 과정</label>
+          <textarea id="f-process" placeholder="방법, 절차, 사용 도구 등"></textarea>
+        </div>
+        <div class="field">
+          <label>실험 결과</label>
+          <textarea id="f-result" placeholder="주요 결과 및 측정값"></textarea>
+        </div>
+        <div class="field">
+          <label>오차 원인 및 고찰</label>
+          <textarea id="f-discussion" placeholder="오차 분석, 개선점, 느낀 점"></textarea>
+        </div>
+        <div class="field">
+          <label>파일 첨부 (사진 · PDF · HWP 등)</label>
+          <label class="upload-zone" for="f-files">
+            <div class="upload-zone-icon">📎</div>
+            <div class="upload-zone-text">클릭해서 파일 선택</div>
+          </label>
+          <input type="file" id="f-files" multiple accept="image/*,.pdf,.doc,.docx,.ppt,.pptx,.hwp,.zip" style="display:none" onchange="handleFiles(this)">
+          <div class="preview-grid" id="preview-imgs"></div>
+          <div class="file-chips" id="preview-docs"></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-ghost" onclick="showList()">취소</button>
+          <button class="btn-primary" onclick="submitForm()">아카이브 등록하기</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DETAIL VIEW -->
+    <div id="view-detail" style="display:none">
+      <div class="detail-wrap" id="detail-content"></div>
+    </div>
+
+  </div><!-- /scroll -->
+</div><!-- /main -->
+
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy }
+    from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+  // Storage replaced by ImgBB
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDGXvAwdPkIAzS7HaGA98itrV4auBe5MD4",
+    authDomain: "digital-library-a78ab.firebaseapp.com",
+    projectId: "digital-library-a78ab",
+    storageBucket: "digital-library-a78ab.firebasestorage.app",
+    messagingSenderId: "592596027730",
+    appId: "1:592596027730:web:4cd606d999ed777648128b"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+  const IMGBB_KEY = "450fa85d40e12ec7bf5f58c92d7cdba6";
+
+  async function uploadToImgBB(file) {
+    // 이미지만 ImgBB, 나머지 파일은 base64로 Firestore에 저장
+    if (file.type.startsWith("image/")) {
+      const fd = new FormData();
+      fd.append("image", file);
+      const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, {
+        method: "POST", body: fd
+      });
+      if (!res.ok) throw new Error("ImgBB 업로드 실패");
+      const data = await res.json();
+      return { url: data.data.url, deleteUrl: data.data.delete_url };
+    } else {
+      // PDF/HWP 등 문서는 base64로 Firestore에 저장
+      return new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = ev => res({ url: null, dataUrl: ev.target.result });
+        r.onerror = rej;
+        r.readAsDataURL(file);
+      });
+    }
+  }
+
+  // ── state ──────────────────────────────────────────────
+  let allPapers = [];
+  let currentGrade = 2;
+  let pendingFiles = []; // { file, previewUrl, isImage }
+
+  // ── helpers ────────────────────────────────────────────
+  function fmt(ts) {
+    if (!ts) return "";
+    const d = ts.toDate ? ts.toDate() : new Date(ts);
+    return `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일`;
+  }
+  function progress(pct) {
+    document.getElementById("progress-bar").style.width = pct + "%";
+    if (pct >= 100) setTimeout(() => document.getElementById("progress-bar").style.width = "0%", 400);
+  }
+  function toast(msg, isErr) {
+    const el = document.getElementById("toast");
+    el.textContent = msg;
+    el.style.background = isErr ? "#E03E3E" : "#37352F";
+    el.style.color = "white";
+    el.classList.add("show");
+    setTimeout(() => el.classList.remove("show"), 3000);
+  }
+  function setLoading(on) {
+    document.getElementById("loading-overlay").style.display = on ? "flex" : "none";
+  }
+
+  // ── load ───────────────────────────────────────────────
+  async function loadAll() {
+    setLoading(true);
+    try {
+      const q = query(collection(db, "papers"), orderBy("createdAt", "desc"));
+      const snap = await getDocs(q);
+      allPapers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      updateBadges();
+      renderList();
+    } catch(e) {
+      toast("데이터 불러오기 실패: " + e.message, true);
+    }
+    setLoading(false);
+  }
+
+  function updateBadges() {
+    const c2 = allPapers.filter(p => p.grade == 2).length;
+    const c3 = allPapers.filter(p => p.grade == 3).length;
+    document.getElementById("badge-all").textContent = allPapers.length;
+    document.getElementById("badge-2").textContent   = c2;
+    document.getElementById("badge-3").textContent   = c3;
+    document.getElementById("gtab-count-2").textContent = `(${c2})`;
+    document.getElementById("gtab-count-3").textContent = `(${c3})`;
+  }
+
+  // ── expose globals ────────────────────────────────────
+  window.switchGrade = function(g) {
+    if (g !== null) currentGrade = g;
+    document.getElementById("gtab-2").classList.toggle("active", currentGrade == 2);
+    document.getElementById("gtab-3").classList.toggle("active", currentGrade == 3);
+    document.getElementById("menu-2").classList.toggle("active", currentGrade == 2);
+    document.getElementById("menu-3").classList.toggle("active", currentGrade == 3);
+    document.getElementById("menu-all").classList.remove("active");
+    renderList();
+  };
+
+  window.toggleSidebar = function() {
+    document.getElementById("sidebar").classList.toggle("closed");
+  };
+
+  window.showList = function() {
+    document.getElementById("view-list").style.display   = "";
+    document.getElementById("view-write").style.display  = "none";
+    document.getElementById("view-detail").style.display = "none";
+    document.getElementById("btn-back").style.display    = "none";
+    document.getElementById("btn-write").style.display   = "";
+    document.getElementById("searchInp").style.display   = "";
+    renderList();
+  };
+
+  window.showWrite = function() {
+    document.getElementById("view-list").style.display   = "none";
+    document.getElementById("view-write").style.display  = "";
+    document.getElementById("view-detail").style.display = "none";
+    document.getElementById("btn-back").style.display    = "";
+    document.getElementById("btn-write").style.display   = "none";
+    document.getElementById("searchInp").style.display   = "none";
+    document.getElementById("f-grade").value = currentGrade;
+    pendingFiles = [];
+    document.getElementById("preview-imgs").innerHTML = "";
+    document.getElementById("preview-docs").innerHTML = "";
+    ["f-author","f-title","f-abstract","f-process","f-result","f-discussion"].forEach(id => document.getElementById(id).value = "");
+  };
+
+  window.renderList = function() {
+    const search = (document.getElementById("searchInp").value || "").trim();
+    const papers = allPapers.filter(p => {
+      if (p.grade != currentGrade) return false;
+      if (!search) return true;
+      return (p.title||"").includes(search) || (p.author||"").includes(search) || (p.abstract||"").includes(search);
+    });
+    document.getElementById("stat-line").textContent = papers.length + "개의 자료";
+    const grid = document.getElementById("card-grid");
+    if (papers.length === 0) {
+      grid.innerHTML = `<div class="empty" style="grid-column:1/-1">
+        <div class="empty-icon">📭</div>
+        <div class="empty-title">${currentGrade}학년 아카이브가 비어있습니다</div>
+        <div class="empty-sub">+ 자료 등록 버튼으로 첫 번째 자료를 올려보세요!</div>
+      </div>`;
+      return;
+    }
+    grid.innerHTML = papers.map(p => `
+      <div class="card" onclick="showDetail('${p.id}')">
+        ${p.thumbUrl ? `<img class="card-thumb" src="${p.thumbUrl}" alt="">` : ""}
+        <div class="card-title">${p.title || ""}</div>
+        <div class="card-abstract">${p.abstract || ""}</div>
+        <div class="card-footer">
+          <span class="card-author">${p.author || ""}</span>
+          <span class="card-date">${fmt(p.createdAt)}</span>
+        </div>
+      </div>
+    `).join("");
+  };
+
+  window.handleFiles = function(input) {
+    Array.from(input.files).forEach(file => {
+      const isImage = file.type.startsWith("image/");
+      const previewUrl = isImage ? URL.createObjectURL(file) : null;
+      pendingFiles.push({ file, previewUrl, isImage });
+    });
+    renderFilePreviews();
+    input.value = "";
+  };
+
+  function renderFilePreviews() {
+    const imgDiv = document.getElementById("preview-imgs");
+    const docDiv = document.getElementById("preview-docs");
+    imgDiv.innerHTML = pendingFiles.filter(f => f.isImage).map((f, i) => `
+      <div class="preview-item">
+        <img src="${f.previewUrl}" alt="${f.file.name}">
+        <button class="preview-del" onclick="removeFile(${pendingFiles.indexOf(f)})">×</button>
+      </div>`).join("");
+    docDiv.innerHTML = pendingFiles.filter(f => !f.isImage).map((f, i) => `
+      <div class="file-chip">
+        📄 <span style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.file.name}</span>
+        <span class="file-chip-del" onclick="removeFile(${pendingFiles.indexOf(f)})">×</span>
+      </div>`).join("");
+  }
+
+  window.removeFile = function(idx) {
+    pendingFiles.splice(idx, 1);
+    renderFilePreviews();
+  };
+
+  window.submitForm = async function() {
+    const title    = document.getElementById("f-title").value.trim();
+    const author   = document.getElementById("f-author").value.trim();
+    const abstract = document.getElementById("f-abstract").value.trim();
+    if (!title || !author || !abstract) { toast("제목, 작성자, 요약은 필수입니다.", true); return; }
+
+    setLoading(true);
+    progress(10);
+    try {
+      const grade    = parseInt(document.getElementById("f-grade").value);
+      const process  = document.getElementById("f-process").value.trim();
+      const result   = document.getElementById("f-result").value.trim();
+      const discussion = document.getElementById("f-discussion").value.trim();
+
+      // 파일 업로드 (ImgBB + Firestore)
+      const filesMeta = [];
+      let thumbUrl = null;
+      const total = pendingFiles.length;
+      for (let i = 0; i < total; i++) {
+        const { file, isImage } = pendingFiles[i];
+        progress(10 + Math.round((i / total) * 70));
+        const result = await uploadToImgBB(file);
+        filesMeta.push({ name: file.name, type: file.type, url: result.url || null, dataUrl: result.dataUrl || null, deleteUrl: result.deleteUrl || null });
+        if (isImage && result.url && !thumbUrl) thumbUrl = result.url;
+      }
+      progress(85);
+
+      // Firestore 저장
+      const docRef = await addDoc(collection(db, "papers"), {
+        grade, title, author, abstract, process, result, discussion,
+        files: filesMeta, thumbUrl,
+        createdAt: new Date(), views: 0
+      });
+      progress(100);
+
+      allPapers.unshift({ id: docRef.id, grade, title, author, abstract, process, result, discussion,
+        files: filesMeta, thumbUrl, createdAt: { toDate: () => new Date() }, views: 0 });
+      updateBadges();
+      toast("자료가 등록되었습니다 🎉");
+      showList();
+    } catch(e) {
+      toast("등록 실패: " + e.message, true);
+      console.error(e);
+    }
+    setLoading(false);
+  };
+
+  window.showDetail = async function(id) {
+    const p = allPapers.find(x => x.id === id);
+    if (!p) return;
+    // 조회수 증가
+    try {
+      await updateDoc(doc(db, "papers", id), { views: (p.views || 0) + 1 });
+      p.views = (p.views || 0) + 1;
+    } catch {}
+
+    document.getElementById("view-list").style.display   = "none";
+    document.getElementById("view-write").style.display  = "none";
+    document.getElementById("view-detail").style.display = "";
+    document.getElementById("btn-back").style.display    = "";
+    document.getElementById("btn-write").style.display   = "none";
+    document.getElementById("searchInp").style.display   = "none";
+
+    const imgs  = (p.files || []).filter(f => f.type?.startsWith("image/"));
+    const docs  = (p.files || []).filter(f => !f.type?.startsWith("image/"));
+    const sections = [
+      { label:"연구 요약",        val: p.abstract },
+      { label:"실험 과정",        val: p.process },
+      { label:"실험 결과",        val: p.result },
+      { label:"오차 원인 및 고찰", val: p.discussion },
+    ].filter(s => s.val);
+
+    document.getElementById("detail-content").innerHTML = `
+      <div class="detail-tags">
+        <span class="tag">${p.grade}학년</span>
+      </div>
+      <div class="detail-title">${p.title || ""}</div>
+      <div class="detail-meta">
+        <span>✍️ ${p.author || ""}</span>
+        <span>📅 ${fmt(p.createdAt)}</span>
+        <span>👁 ${p.views} 조회</span>
+      </div>
+      ${imgs.length ? `<div class="img-gallery">${imgs.map(f =>
+        `<img src="${f.url}" onclick="window.open('${f.url}')"
+          style="border-radius:8px;object-fit:cover;cursor:pointer;border:1px solid #E9E9E6;
+                 width:${imgs.length===1?"100%":"180px"};height:${imgs.length===1?"260px":"130px"}">`
+      ).join("")}</div>` : ""}
+      ${sections.map(s => `
+        <div class="sec-box">
+          <div class="sec-title">${s.label}</div>
+          <div class="sec-body">${s.val}</div>
+        </div>`).join("")}
+      ${docs.length ? `
+        <div class="sec-box">
+          <div class="sec-title">첨부 파일</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            ${docs.map(f => `<a class="detail-file" href="${f.url || f.dataUrl}" target="_blank" download="${f.name}">📄 ${f.name} <span style="color:#2383E2;font-size:12px">↓</span></a>`).join("")}
+          </div>
+        </div>` : ""}
+      <div style="display:flex;justify-content:flex-end;margin-top:8px">
+        <button class="btn-delete" onclick="deletePaper('${p.id}')">🗑 자료 삭제</button>
+      </div>
+    `;
+  };
+
+  window.deletePaper = async function(id) {
+    if (!confirm("이 자료를 삭제하시겠습니까?")) return;
+    setLoading(true);
+    try {
+      const p = allPapers.find(x => x.id === id);
+      // Cloudinary 파일 삭제는 서버사이드 필요 - Firestore 문서만 삭제
+      // (Cloudinary 무료 플랜에서 클라이언트 삭제 불가)
+      await deleteDoc(doc(db, "papers", id));
+      allPapers = allPapers.filter(x => x.id !== id);
+      updateBadges();
+      toast("삭제되었습니다.");
+      showList();
+    } catch(e) {
+      toast("삭제 실패: " + e.message, true);
+    }
+    setLoading(false);
+  };
+
+  // ── init ──────────────────────────────────────────────
+  loadAll();
+</script>
+</body>
+</html>
