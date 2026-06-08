@@ -269,12 +269,12 @@
           <textarea id="f-discussion" placeholder="오차 분석, 개선점, 느낀 점"></textarea>
         </div>
         <div class="field">
-          <label>파일 첨부 (사진 · PDF · HWP 등)</label>
+          <label>사진 첨부</label>
           <label class="upload-zone" for="f-files">
-            <div class="upload-zone-icon">📎</div>
-            <div class="upload-zone-text">클릭해서 파일 선택</div>
+            <div class="upload-zone-icon">📸</div>
+            <div class="upload-zone-text">사진만 첨부 가능 (JPG · PNG)</div>
           </label>
-          <input type="file" id="f-files" multiple accept="image/*,.pdf,.doc,.docx,.ppt,.pptx,.hwp,.zip" style="display:none" onchange="handleFiles(this)">
+          <input type="file" id="f-files" multiple accept="image/*" style="display:none" onchange="handleFiles(this)">
           <div class="preview-grid" id="preview-imgs"></div>
           <div class="file-chips" id="preview-docs"></div>
         </div>
@@ -282,6 +282,11 @@
           <label>📁 구글 드라이브 링크 (PDF·HWP 등 파일 공유용)</label>
           <input id="f-drivelink" placeholder="https://drive.google.com/... (공유 링크 붙여넣기)">
           <div style="font-size:12px;color:#9B9A97;margin-top:4px">드라이브에서 파일 우클릭 → 공유 → 링크 복사 후 붙여넣기</div>
+        </div>
+        <div class="field" style="margin-top:14px">
+          <label>📁 구글 드라이브 링크 <span style="font-weight:400;color:#9B9A97">(PDF · HWP · PPT 등 파일 공유용, 선택)</span></label>
+          <input id="f-drivelink" placeholder="https://drive.google.com/... 링크 붙여넣기">
+          <div style="font-size:12px;color:#B7B5B0;margin-top:5px">드라이브에서 파일 우클릭 → 공유 → 링크 복사</div>
         </div>
         <div class="form-actions">
           <button class="btn-ghost" onclick="showList()">취소</button>
