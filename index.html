@@ -278,6 +278,11 @@
           <div class="preview-grid" id="preview-imgs"></div>
           <div class="file-chips" id="preview-docs"></div>
         </div>
+        <div class="field">
+          <label>📁 구글 드라이브 링크 (PDF·HWP 등 파일 공유용)</label>
+          <input id="f-drivelink" placeholder="https://drive.google.com/... (공유 링크 붙여넣기)">
+          <div style="font-size:12px;color:#9B9A97;margin-top:4px">드라이브에서 파일 우클릭 → 공유 → 링크 복사 후 붙여넣기</div>
+        </div>
         <div class="form-actions">
           <button class="btn-ghost" onclick="showList()">취소</button>
           <button class="btn-primary" onclick="submitForm()">아카이브 등록하기</button>
@@ -423,7 +428,7 @@
     pendingFiles = [];
     document.getElementById("preview-imgs").innerHTML = "";
     document.getElementById("preview-docs").innerHTML = "";
-    ["f-author","f-title","f-abstract","f-process","f-result","f-discussion"].forEach(id => document.getElementById(id).value = "");
+    ["f-author","f-title","f-abstract","f-process","f-result","f-discussion","f-drivelink"].forEach(id => document.getElementById(id).value = "");
   };
 
   window.renderList = function() {
@@ -499,6 +504,7 @@
       const process  = document.getElementById("f-process").value.trim();
       const result   = document.getElementById("f-result").value.trim();
       const discussion = document.getElementById("f-discussion").value.trim();
+      const drivelink = document.getElementById("f-drivelink").value.trim();
 
       // 파일 업로드 (ImgBB + Firestore)
       const filesMeta = [];
@@ -508,7 +514,7 @@
         const { file, isImage } = pendingFiles[i];
         progress(10 + Math.round((i / total) * 70));
         const result = await uploadToImgBB(file);
-        filesMeta.push({ name: file.name, type: file.type, url: result.url || null, dataUrl: result.dataUrl || null, deleteUrl: result.deleteUrl || null });
+        filesMeta.push({ name: file.name, type: file.type, url: result.url || null, deleteUrl: result.deleteUrl || null });
         if (isImage && result.url && !thumbUrl) thumbUrl = result.url;
       }
       progress(85);
@@ -516,7 +522,7 @@
       // Firestore 저장
       const docRef = await addDoc(collection(db, "papers"), {
         grade, title, author, abstract, process, result, discussion,
-        files: filesMeta, thumbUrl,
+        files: filesMeta, thumbUrl, drivelink,
         createdAt: new Date(), views: 0
       });
       progress(100);
@@ -582,8 +588,18 @@
         <div class="sec-box">
           <div class="sec-title">첨부 파일</div>
           <div style="display:flex;flex-wrap:wrap;gap:8px">
-            ${docs.map(f => `<a class="detail-file" href="${f.url || f.dataUrl}" target="_blank" download="${f.name}">📄 ${f.name} <span style="color:#2383E2;font-size:12px">↓</span></a>`).join("")}
+            ${docs.map(f => f.url
+              ? `<a class="detail-file" href="${f.url}" target="_blank">📄 ${f.name} <span style="color:#2383E2;font-size:12px">↓</span></a>`
+              : `<span class="detail-file" style="opacity:0.5">📄 ${f.name} (미리보기 불가)</span>`
+            ).join("")}
           </div>
+        </div>` : ""}
+      ${p.drivelink ? `
+        <div class="sec-box">
+          <div class="sec-title">첨부 파일 (구글 드라이브)</div>
+          <a href="${p.drivelink}" target="_blank" class="detail-file">
+            📁 드라이브에서 파일 열기 <span style="color:#2383E2;font-size:12px">↗</span>
+          </a>
         </div>` : ""}
       <div style="display:flex;justify-content:flex-end;margin-top:8px">
         <button class="btn-delete" onclick="deletePaper('${p.id}')">🗑 자료 삭제</button>
