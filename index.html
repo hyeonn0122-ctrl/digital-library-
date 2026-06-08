@@ -594,13 +594,20 @@
             ).join("")}
           </div>
         </div>` : ""}
-      ${p.drivelink ? `
+      ${p.drivelink ? (() => {
+        // 드라이브 링크에서 파일 ID 추출
+        const m = p.drivelink.match(/\/d\/([a-zA-Z0-9_-]+)/) || p.drivelink.match(/id=([a-zA-Z0-9_-]+)/);
+        const fileId = m ? m[1] : null;
+        const previewUrl = fileId ? `https://drive.google.com/file/d/${fileId}/preview` : null;
+        return `
         <div class="sec-box">
           <div class="sec-title">첨부 파일 (구글 드라이브)</div>
+          ${previewUrl ? `<iframe src="${previewUrl}" style="width:100%;height:500px;border:1px solid #E9E9E6;border-radius:8px;margin-bottom:10px" allow="autoplay"></iframe>` : ""}
           <a href="${p.drivelink}" target="_blank" class="detail-file">
-            📁 드라이브에서 파일 열기 <span style="color:#2383E2;font-size:12px">↗</span>
+            📁 새 창에서 열기 <span style="color:#2383E2;font-size:12px">↗</span>
           </a>
-        </div>` : ""}
+        </div>`;
+      })() : ""}
       <div style="display:flex;justify-content:flex-end;margin-top:8px">
         <button class="btn-delete" onclick="deletePaper('${p.id}')">🗑 자료 삭제</button>
       </div>
